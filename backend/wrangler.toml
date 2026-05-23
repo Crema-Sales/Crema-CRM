@@ -1,0 +1,90 @@
+# Secrets (set via: wrangler secret put NAME):
+#   JWT_SIGNING_KEY         — HS256 signing key for rep JWTs (sub=repId, email, 8h TTL)
+#   OPENROUTER_API_KEY      — required only when AGENT_LLM_PROVIDER="openrouter"
+#   AI_GATEWAY_ACCOUNT_ID   — Cloudflare account ID used in the AI Gateway proxy URL
+# Local dev: copy backend/.dev.vars.example -> backend/.dev.vars (gitignored) and fill in.
+
+name = "ctrl-alt-elite-agent"
+main = "src/index.ts"
+compatibility_date = "2026-05-01"
+compatibility_flags = ["nodejs_compat"]
+
+[[durable_objects.bindings]]
+name = "AGENT"
+class_name = "RepAgent"
+
+[[durable_objects.bindings]]
+name = "MCP_AGENT"
+class_name = "RepMcp"
+
+[[durable_objects.bindings]]
+name = "REP_EXT"
+class_name = "RepExtension"
+
+[[durable_objects.bindings]]
+name = "CUSTOMER_STREAM"
+class_name = "CustomerStream"
+
+[[migrations]]
+tag = "v1"
+new_sqlite_classes = ["RepAgent"]
+
+[[migrations]]
+tag = "v2"
+new_sqlite_classes = ["RepMcp"]
+
+[[migrations]]
+tag = "v3"
+new_sqlite_classes = ["RepExtension"]
+
+[[migrations]]
+tag = "v4"
+new_sqlite_classes = ["CustomerStream"]
+
+# Phase 08 — D1 persistence. Replace the in-memory seed.ts with a real database.
+# database_id is provisioned by `bunx wrangler d1 create crema-agent`; if you're
+# bringing this up fresh, run that first and paste the id below.
+[[d1_databases]]
+binding = "DB"
+database_name = "crema-agent"
+database_id = "1f6199a5-9288-4f04-8f37-b90b40d77d8f"
+migrations_dir = "migrations"
+
+# Phase 10 — KV-backed identity resolution. alias:email:<addr>,
+# alias:anonymous_id:<id>, alias:user_id:<uid> → customer_id.
+[[kv_namespaces]]
+binding = "IDENTITY"
+id = "0e7501778121421b972d02a74f67f87d"
+
+# Cron triggers. Times are UTC. `0 13 * * *` fires daily at 13:00 UTC
+# (08:00 CST / 09:00 CDT) — the Morning Cup fan-out (see backend/src/cron.ts).
+[triggers]
+crons = ["0 13 * * *"]
+
+[ai]
+binding = "AI"
+
+# Self service binding: lets the RepAgent's tools fetch the Worker's own /v1/*
+# routes in-process (no public-network hop) while still carrying the rep's JWT.
+[[services]]
+binding = "SELF"
+service = "ctrl-alt-elite-agent"
+
+[vars]
+# OpenRouter + Claude Sonnet is the default copilot path. Workers AI remains
+# wired (set AGENT_LLM_PROVIDER="workers-ai") as a zero-secret fallback for
+# free local hacking or if the OpenRouter key is unavailable.
+AGENT_LLM_PROVIDER = "openrouter"
+AI_GATEWAY_ID = "crema-sales-agent"
+AI_GATEWAY_ACCOUNT_ID = ""
+WORKERS_AI_MODEL = "@cf/meta/llama-3.3-70b-instruct-fp8-fast"
+# Fallback origin used when `env.SELF` is not bound (rare; mostly for older
+# wrangler dev sessions). Leave blank in deployed environments.
+INTERNAL_API_BASE = ""
+# Comma-separated origin allowlist for CORS (REST routes) and WS Origin checks.
+# Must include every host the frontend deploys to. localhost:5173 is the Vite
+# dev server port.
+UI_ORIGIN = "https://cremasales.com,https://www.cremasales.com,https://ctv-crm.smashlabs.workers.dev,http://localhost:5173"
+
+[observability]
+enabled = true

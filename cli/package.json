@@ -1,0 +1,24 @@
+{
+  "name": "@cremasales/cli",
+  "version": "1.0.0",
+  "description": "Dependency-free command-line client for the Crema Sales API (cremasales.com/api/v1).",
+  "type": "module",
+  "bin": {
+    "crema": "./crema.ts"
+  },
+  "scripts": {
+    "start": "bun run crema.ts",
+    "smoke": "bun run crema.ts smoke",
+    "typecheck": "tsc --noEmit"
+  },
+  "engines": {
+    "bun": ">=1.0.0",
+    "node": ">=18"
+  },
+  "keywords": ["crema", "crm", "cli", "api", "agent"],
+  "license": "MIT",
+  "devDependencies": {
+    "@types/node": "^22.16.5",
+    "typescript": "^5.8.3"
+  }
+}

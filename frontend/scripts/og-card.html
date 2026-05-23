@@ -1,0 +1,112 @@
+<!doctype html>
+<!--
+  Source for the social link-preview image (og:image / twitter:image).
+  Render: open in Chrome, screenshot #og as PNG at native size → public/og-image.png
+  See scripts/render-og.sh for the one-liner.
+-->
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Instrument+Serif:ital@0;1&family=JetBrains+Mono:wght@500&display=swap"
+      rel="stylesheet"
+    />
+    <style>
+      * { margin: 0; padding: 0; box-sizing: border-box; }
+      html, body { background: #14100b; }
+      #og {
+        width: 1200px;
+        height: 630px;
+        position: relative;
+        overflow: hidden;
+        font-family: "Inter", system-ui, sans-serif;
+        background:
+          radial-gradient(900px 520px at 78% 8%, rgba(201, 136, 90, 0.34), transparent 62%),
+          radial-gradient(700px 600px at 8% 108%, rgba(201, 136, 90, 0.16), transparent 60%),
+          linear-gradient(150deg, #2c1c0f 0%, #1b120a 52%, #140d07 100%);
+        color: #f4ece0;
+      }
+      /* faint steam-curve flourish, top-right */
+      #og .grain {
+        position: absolute; inset: 0;
+        background-image: radial-gradient(rgba(255, 255, 255, 0.025) 1px, transparent 1px);
+        background-size: 4px 4px;
+      }
+      #og .frame {
+        position: absolute; inset: 0;
+        padding: 72px 80px;
+        display: flex; flex-direction: column; justify-content: space-between;
+      }
+      .brand { display: flex; align-items: center; gap: 14px; }
+      .brand svg { width: 38px; height: 38px; }
+      .brand .name {
+        font-size: 30px; font-weight: 700; letter-spacing: -0.02em; color: #fbf4e9;
+      }
+      .brand .dot { color: #d59a68; }
+
+      .eyebrow {
+        font-family: "JetBrains Mono", ui-monospace, monospace;
+        font-size: 16px; font-weight: 500; letter-spacing: 0.28em;
+        text-transform: uppercase; color: #c9885a;
+        margin-bottom: 26px;
+      }
+      h1 {
+        font-family: "Instrument Serif", Georgia, serif;
+        font-weight: 400; font-size: 74px; line-height: 1.06;
+        letter-spacing: -0.012em; color: #fbf4e9; max-width: 880px;
+      }
+      h1 em { font-style: italic; color: #d59a68; }
+      .sub {
+        margin-top: 24px; font-size: 23px; line-height: 1.5;
+        color: #c7b6a2; max-width: 720px; font-weight: 400;
+      }
+
+      .foot {
+        display: flex; align-items: center; justify-content: space-between;
+      }
+      .foot .url {
+        font-family: "JetBrains Mono", ui-monospace, monospace;
+        font-size: 19px; font-weight: 500; color: #e7d8c4;
+      }
+      .foot .tag {
+        font-size: 17px; color: #9b876f; font-weight: 500;
+      }
+      .rule {
+        position: absolute; left: 80px; right: 80px; bottom: 132px;
+        height: 1px; background: linear-gradient(90deg, rgba(201,136,90,0.45), rgba(201,136,90,0.04));
+      }
+    </style>
+  </head>
+  <body>
+    <div id="og">
+      <div class="grain"></div>
+      <div class="rule"></div>
+      <div class="frame">
+        <div class="brand">
+          <svg viewBox="0 0 24 24" fill="none" stroke="#d59a68" stroke-width="2"
+               stroke-linecap="round" stroke-linejoin="round">
+            <path d="M10 2v2" /><path d="M14 2v2" /><path d="M6 2v2" />
+            <path d="M16 8a1 1 0 0 1 1 1v8a4 4 0 0 1-4 4H7a4 4 0 0 1-4-4V9a1 1 0 0 1 1-1h14a4 4 0 0 1 0 8h-1" />
+          </svg>
+          <span class="name">Crema<span class="dot">.</span></span>
+        </div>
+
+        <div>
+          <div class="eyebrow">AI-native sales CRM</div>
+          <h1>Build customer <em>relationships</em>, not records.</h1>
+          <p class="sub">
+            Every email, call, and signal flows in automatically, so reps spend
+            the day on the people who matter, not data entry.
+          </p>
+        </div>
+
+        <div class="foot">
+          <span class="url">cremasales.com</span>
+          <span class="tag">Coffee is for closers</span>
+        </div>
+      </div>
+    </div>
+  </body>
+</html>

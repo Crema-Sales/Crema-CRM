@@ -1,0 +1,61 @@
+# ── Secrets & env ─────────────────────────────────────────────────────────────
+.env
+.env.*
+!.env.example
+.dev.vars
+.dev.vars.*
+!.dev.vars.example
+*.local
+
+# Integration-test minted JWTs (per-rep token cache).
+scripts/integration/.tokens/
+
+# ── Defensive: keys / certs / SSH ─────────────────────────────────────────────
+*.pem
+*.key
+*.p12
+*.pfx
+*.ppk
+id_rsa*
+id_ed25519*
+
+# ── Dependencies ──────────────────────────────────────────────────────────────
+node_modules/
+
+# ── Build output ──────────────────────────────────────────────────────────────
+dist/
+build/
+
+# ── Tooling caches ────────────────────────────────────────────────────────────
+.cache/
+.turbo/
+coverage/
+
+# ── Temp ──────────────────────────────────────────────────────────────────────
+tmp/
+temp/
+*.tmp
+
+# ── Logs ──────────────────────────────────────────────────────────────────────
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+bun-debug.log*
+
+# ── Editors ───────────────────────────────────────────────────────────────────
+.vscode/
+.idea/
+.history/
+*.swp
+*.swo
+*.swn
+*~
+
+# ── OS ────────────────────────────────────────────────────────────────────────
+.DS_Store
+Thumbs.db
+ehthumbs.db
+.AppleDouble
+.LSOverride

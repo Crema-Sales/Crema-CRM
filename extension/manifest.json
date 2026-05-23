@@ -1,0 +1,58 @@
+{
+  "manifest_version": 3,
+  "name": "Crema Sales Agent",
+  "version": "0.2.0",
+  "description": "Rep-side agent control surface for Crema Sales.",
+  "key": "MIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEAkObj1cUYivMToocSPIK8pSGsAjHVPyZh5svDCZepopQRbDGMonAZLdkIt1zmR8uVoJFRCOVgXqF5sCWHnb6WuRFqaBADa4s7QCFZ/TMQW3+A5bbp69SLrmemLUHrFdBk2DYFYDrJPxPOxD54HQYEFnEyHOPJiV9HDDYJR+b228BdxQprcODhcuIAiht7BHqj/KSSr8DLfIPXDorWZgtYFSFBc8O/GQSiFWqnW8KxyG2+fPavfov9yiMCBZDnzUO7IK9duGOiHjijW+kDXwi2fSX8PIo33s08lM55SXdy0T7+HAS9j11KDo+ZL10AnqUj467pXKmKV5wQ4walk7P/CQIDAQAB",
+  "background": {
+    "service_worker": "background.js",
+    "type": "module"
+  },
+  "action": {
+    "default_icon": {
+      "16": "icons/agent-on-128.png",
+      "32": "icons/agent-on-128.png",
+      "48": "icons/agent-on-128.png",
+      "128": "icons/agent-on-128.png"
+    },
+    "default_title": "Crema Sales Agent",
+    "default_popup": "popup.html"
+  },
+  "permissions": [
+    "storage",
+    "alarms",
+    "tabs",
+    "scripting",
+    "activeTab",
+    "debugger",
+    "webRequest"
+  ],
+  "host_permissions": ["<all_urls>"],
+  "content_scripts": [
+    {
+      "matches": [
+        "https://mail.google.com/*",
+        "https://outlook.office.com/*",
+        "https://outlook.office365.com/*",
+        "https://outlook.live.com/*",
+        "https://www.linkedin.com/*",
+        "https://teams.microsoft.com/*"
+      ],
+      "js": ["content.js"],
+      "run_at": "document_idle"
+    }
+  ],
+  "externally_connectable": {
+    "matches": [
+      "https://cremasales.com/*",
+      "https://*.cremasales.com/*",
+      "http://localhost:*/*"
+    ]
+  },
+  "icons": {
+    "16": "icons/agent-off-128.png",
+    "32": "icons/agent-off-128.png",
+    "48": "icons/agent-off-128.png",
+    "128": "icons/agent-off-128.png"
+  }
+}

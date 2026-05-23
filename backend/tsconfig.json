@@ -1,0 +1,30 @@
+{
+  "compilerOptions": {
+    "target": "ES2022",
+    "module": "ES2022",
+    "moduleResolution": "Bundler",
+    "lib": ["ES2022"],
+    "types": ["@cloudflare/workers-types", "@types/node"],
+    "strict": true,
+    "noImplicitAny": true,
+    "noUnusedLocals": true,
+    "noUnusedParameters": true,
+    "noFallthroughCasesInSwitch": true,
+    "esModuleInterop": true,
+    "forceConsistentCasingInFileNames": true,
+    "isolatedModules": true,
+    "skipLibCheck": true,
+    "resolveJsonModule": true,
+    "allowJs": false,
+    "noEmit": true,
+    "outDir": "./dist",
+    "paths": {
+      "@crema/shared": ["../shared/schemas/index.ts"],
+      "@crema/shared/*": ["../shared/*"],
+      "@hono/zod-openapi": ["./node_modules/@hono/zod-openapi"],
+      "zod": ["./node_modules/zod"]
+    }
+  },
+  "include": ["src/**/*.ts"],
+  "exclude": ["node_modules", "dist", ".wrangler"]
+}

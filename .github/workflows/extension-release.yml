@@ -1,0 +1,122 @@
+name: Release Extension
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'extension/**'
+      - 'shared/**'
+      - '.github/workflows/extension-release.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+defaults:
+  run:
+    working-directory: extension
+
+jobs:
+  build-and-release:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup Bun
+        uses: oven-sh/setup-bun@v2
+        with:
+          bun-version: latest
+
+      - name: Install dependencies
+        run: bun install --frozen-lockfile
+
+      - name: Typecheck
+        run: bun run typecheck
+
+      - name: Build
+        run: bun run build
+
+      - name: Compute version + tag
+        id: meta
+        env:
+          RUN_NUMBER: ${{ github.run_number }}
+          GIT_SHA: ${{ github.sha }}
+        run: |
+          set -euo pipefail
+          version=$(node -p "require('./package.json').version")
+          tag="extension-v${version}-build.${RUN_NUMBER}"
+          zip="crema-agent-extension-${tag}.zip"
+          short_sha=$(git rev-parse --short "$GIT_SHA")
+          {
+            echo "version=${version}"
+            echo "tag=${tag}"
+            echo "zip=${zip}"
+            echo "short_sha=${short_sha}"
+          } >> "$GITHUB_OUTPUT"
+
+      - name: Package dist/
+        env:
+          ZIP: ${{ steps.meta.outputs.zip }}
+          LATEST_ZIP: crema-agent-latest.zip
+        working-directory: extension/dist
+        run: |
+          set -euo pipefail
+          zip -r "${ZIP}" .
+          mv "${ZIP}" "${GITHUB_WORKSPACE}/${ZIP}"
+          # Stable-named alias for static-link consumers (e.g. cremasales.com).
+          cp "${GITHUB_WORKSPACE}/${ZIP}" "${GITHUB_WORKSPACE}/${LATEST_ZIP}"
+          ls -la "${GITHUB_WORKSPACE}/${ZIP}" "${GITHUB_WORKSPACE}/${LATEST_ZIP}"
+          unzip -l "${GITHUB_WORKSPACE}/${ZIP}"
+
+      - name: Write release notes to file
+        env:
+          REPO: ${{ github.repository }}
+          SERVER_URL: ${{ github.server_url }}
+          RUN_ID: ${{ github.run_id }}
+          RUN_NUMBER: ${{ github.run_number }}
+          REF_NAME: ${{ github.ref_name }}
+          GIT_SHA: ${{ github.sha }}
+          SHORT_SHA: ${{ steps.meta.outputs.short_sha }}
+          ZIP: ${{ steps.meta.outputs.zip }}
+        run: |
+          set -euo pipefail
+          # Commit subject/body pulled via git (not github.event.head_commit.*)
+          # to keep untrusted strings out of shell expansion.
+          {
+            printf '> :construction: **BETA** — The Crema browser extension is under active development. '
+            printf 'Contracts and storage shape can change between builds; expect to re-download often and '
+            printf 'occasionally remove + reinstall after a breaking change. Please file issues!\n\n'
+            printf '**Commit:** [`%s`](%s/%s/commit/%s)\n' "$SHORT_SHA" "$SERVER_URL" "$REPO" "$GIT_SHA"
+            printf '**Built from:** `%s` · run [#%s](%s/%s/actions/runs/%s)\n\n' \
+              "$REF_NAME" "$RUN_NUMBER" "$SERVER_URL" "$REPO" "$RUN_ID"
+            printf '### Changes in this build\n\n'
+            printf '> '
+            git log -1 --pretty=%s "$GIT_SHA"
+            printf '\n'
+            git log -1 --pretty=%b "$GIT_SHA" | sed 's/^/> /'
+            printf '\n### Install (dev — load unpacked)\n\n'
+            printf '1. Download `%s` below.\n' "$ZIP"
+            printf '2. Unzip locally.\n'
+            printf '3. Chrome → `chrome://extensions` → toggle **Developer Mode** on → **Load unpacked** → select the unzipped folder.\n'
+            printf '4. The grey toolbar icon means OFF. Configure credentials per the [extension README](%s/%s/blob/main/extension/README.md#configuration) then click the icon to flip ON.\n\n' "$SERVER_URL" "$REPO"
+            printf '### Install (production — TODO)\n\n'
+            printf 'Chrome Web Store listing pending.\n'
+          } > "${GITHUB_WORKSPACE}/release-notes.md"
+          echo "--- release notes ---"
+          cat "${GITHUB_WORKSPACE}/release-notes.md"
+
+      - name: Create GitHub Release
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: ${{ steps.meta.outputs.tag }}
+          name: Crema Agent ${{ steps.meta.outputs.tag }}
+          body_path: ${{ github.workspace }}/release-notes.md
+          files: |
+            ${{ steps.meta.outputs.zip }}
+            crema-agent-latest.zip
+          fail_on_unmatched_files: true
+          draft: false
+          # Marked pre-release while the extension is in beta and under active
+          # development. Flip to `false` once the contract / storage shape have
+          # stabilized and a Chrome Web Store listing is live.
+          prerelease: true

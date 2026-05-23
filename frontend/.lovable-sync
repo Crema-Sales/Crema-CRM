@@ -1,0 +1,7 @@
+{
+  "last_synced_sha": "60a1f71",
+  "last_synced_at": "2026-05-19T08:00:00Z",
+  "last_synced_by": "7a8563d",
+  "frontend_remote": "https://github.com/theirmemorial/pulsepipe.git",
+  "notes": "Ported frontend/src/routes/home.tsx → frontend/src/routes/marketing-jon.tsx and added MarketingToggle overlay for /marketing-ped ↔ /marketing-jon A/B comparison. Pure UI port — no Supabase/auth/server-fn changes. Updated by the lovable-sync skill on every successful port."
+}

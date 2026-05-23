@@ -1,0 +1,8 @@
+#!/usr/bin/env bash
+# Convenience wrapper so callers don't need to remember the bun + path dance.
+# Usage:
+#   ./data-generator/datagen orgs list
+#   ./data-generator/datagen all --count 50 --org org_cremasales
+set -euo pipefail
+cd "$(dirname "$0")"
+exec bun run src/cli.ts "$@"

@@ -1,0 +1,37 @@
+{
+  "$schema": "node_modules/wrangler/config-schema.json",
+  "name": "ctv-crm",
+  "compatibility_date": "2025-09-24",
+  "compatibility_flags": ["nodejs_compat"],
+  "main": "src/server.ts",
+  "routes": [
+    { "pattern": "cremasales.com", "custom_domain": true },
+    { "pattern": "www.cremasales.com", "custom_domain": true }
+  ],
+  "d1_databases": [
+    {
+      "binding": "DB",
+      "database_name": "ctv_crm",
+      "database_id": "f89d74c8-f8ea-4cc5-8673-7cc14c8fcb50",
+      "migrations_dir": "migrations"
+    }
+  ],
+  // Non-secret config. Public by design (sender label, base URL). The actual
+  // API key lives in `wrangler secret put RESEND_API_KEY` for prod and
+  // `.dev.vars` for local — see docs/playbooks/resend-email/SECRETS.md.
+  // Bump APP_BASE_URL to the real worker URL post-deploy.
+  //
+  // EMAIL_FROM_ADDRESS uses cremasales.com once DNS verification completes
+  // at Resend (domain id 154d80dd-59e1-4f26-b71b-741737a6d3c4). Sandbox
+  // fallback to onboarding@resend.dev no longer needed.
+  //
+  // APP_BASE_URL here is the PROD URL. Local dev overrides it via .dev.vars
+  // (run-local.sh generates the override automatically).
+  "vars": {
+    "EMAIL_FROM_ADDRESS": "Crema <hello@cremasales.com>",
+    "APP_BASE_URL": "https://cremasales.com"
+  },
+  "observability": {
+    "enabled": true
+  }
+}

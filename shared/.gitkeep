@@ -1,0 +1,3 @@
+# shared
+
+Types, zod schemas, constants used by both `frontend/` and `backend/`. Import from here, never redefine — drift is the enemy.

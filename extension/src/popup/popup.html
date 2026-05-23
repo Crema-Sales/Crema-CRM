@@ -1,0 +1,36 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Crema Sales Agent</title>
+    <link rel="stylesheet" href="popup.css" />
+  </head>
+  <body>
+    <main id="app">
+      <header>
+        <span class="brand">Crema Sales Agent</span>
+        <span id="conn" class="conn" data-status="idle">…</span>
+      </header>
+
+      <section class="master">
+        <div class="master-text">
+          <div class="master-title">Agent</div>
+          <div id="master-sub" class="master-sub">Loading…</div>
+        </div>
+        <button id="master-toggle" class="switch" role="switch" aria-checked="false" aria-label="Master switch"></button>
+      </section>
+
+      <section class="sites">
+        <div class="section-label">Watched sites</div>
+        <p class="section-hint">The agent captures activity on these tabs so reps never log it by hand.</p>
+        <ul id="site-list"></ul>
+      </section>
+
+      <button id="pause" class="pause">Pause everything</button>
+
+      <footer id="rep" class="rep">Not linked to a rep account</footer>
+    </main>
+    <script type="module" src="popup.js"></script>
+  </body>
+</html>

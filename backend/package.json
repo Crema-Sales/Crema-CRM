@@ -1,0 +1,34 @@
+{
+  "name": "ctrl-alt-elite-agent",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "wrangler dev",
+    "deploy": "wrangler deploy",
+    "typecheck": "tsc --noEmit",
+    "test": "node --test --experimental-strip-types --no-warnings test/*.test.ts",
+    "test:mock": "bun test/mock-extension.ts",
+    "test:ping": "bun test/ping-autoresponse.ts",
+    "test:e2e": "node --experimental-strip-types --no-warnings test/e2e-runner.ts"
+  },
+  "dependencies": {
+    "@cloudflare/ai-chat": "^0.7.0",
+    "@crema/shared": "link:@crema/shared",
+    "@hono/zod-openapi": "^1.4.0",
+    "@modelcontextprotocol/sdk": "^1.29.0",
+    "@openrouter/ai-sdk-provider": "^2.9.0",
+    "@scalar/hono-api-reference": "^0.10.16",
+    "agents": "^0.12.4",
+    "ai": "^6.0.185",
+    "hono": "^4.6.14",
+    "jose": "^6.2.3",
+    "workers-ai-provider": "^3.1.14",
+    "zod": "^4.4.3"
+  },
+  "devDependencies": {
+    "@cloudflare/workers-types": "^4.20260101.0",
+    "@types/node": "^22.10.5",
+    "typescript": "^5.7.3",
+    "wrangler": "^4.92.0"
+  }
+}

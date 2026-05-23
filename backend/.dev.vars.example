@@ -1,0 +1,29 @@
+# Copy to .dev.vars (gitignored) and fill in real values.
+
+# ── LLM provider ─────────────────────────────────────────────────────────────
+# Default is "openrouter" (set in wrangler.toml). Switch to "workers-ai" if you
+# want the zero-secret Cloudflare-hosted Llama path.
+# AGENT_LLM_PROVIDER=openrouter
+
+# OpenRouter API key — required when AGENT_LLM_PROVIDER=openrouter.
+# Get one at https://openrouter.ai/keys
+OPENROUTER_API_KEY=
+
+# AI Gateway is OPTIONAL. When set, calls route through Cloudflare's gateway
+# for caching + request logs. When blank, the Worker hits OpenRouter directly.
+AI_GATEWAY_ACCOUNT_ID=
+
+# ── Prospect research (OSINT) ────────────────────────────────────────────────
+# Tavily is the primary search backend for the agent's inner research loop
+# (POST /v1/customers/:id/research). When unset, the loop falls back to
+# scraping DuckDuckGo HTML — works for a demo, not for real runs.
+# Get a key (free tier, 1k searches/mo) at https://tavily.com
+TAVILY_API_KEY=
+
+# ── Runtime ─────────────────────────────────────────────────────────────────
+# Marks the runtime so dev-only conveniences (e.g. /dev/token, ?token=dev) are enabled.
+ENVIRONMENT=dev
+
+# HS256 signing key for rep JWTs (sub=repId, email, 8h TTL). For local dev only;
+# in production set via `wrangler secret put JWT_SIGNING_KEY`.
+JWT_SIGNING_KEY=dev-only-not-for-production

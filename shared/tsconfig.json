@@ -1,0 +1,26 @@
+{
+  "compilerOptions": {
+    "target": "ES2022",
+    "module": "ESNext",
+    "moduleResolution": "Bundler",
+    "lib": ["ES2022"],
+    "strict": true,
+    "noImplicitAny": true,
+    "noUnusedLocals": true,
+    "noUnusedParameters": true,
+    "noFallthroughCasesInSwitch": true,
+    "esModuleInterop": true,
+    "forceConsistentCasingInFileNames": true,
+    "isolatedModules": true,
+    "skipLibCheck": true,
+    "resolveJsonModule": true,
+    "allowJs": false,
+    "noEmit": true,
+    "baseUrl": ".",
+    "paths": {
+      "@hono/zod-openapi": ["../backend/node_modules/@hono/zod-openapi"],
+      "zod": ["../backend/node_modules/zod"]
+    }
+  },
+  "include": ["schemas/**/*.ts", "types/**/*.ts"]
+}

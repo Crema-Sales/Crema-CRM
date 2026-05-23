@@ -1,0 +1,14 @@
+{
+  "name": "data-generator",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "datagen": "bun run src/cli.ts",
+    "typecheck": "tsc --noEmit"
+  },
+  "devDependencies": {
+    "@types/bun": "^1.1.10",
+    "typescript": "^5.6.0"
+  }
+}
