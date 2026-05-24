@@ -23,6 +23,7 @@ The `/v1/*` routes documented further down this file are the **agent worker's** 
 - **Zod schemas in `shared/` are the source of truth.** Frontend (typed fetch wrappers), backend (request validation), and agent tools all import from there. Drift is a P0 bug.
 - **REST-ish, JSON in/out, idempotent by ID.** `PATCH` for partial updates, never `PUT`.
 - **Authz is enforced in the route, once.** Tools, UI calls, and WebSocket messages converge here.
+- **The public surface has a first-party CLI client.** [`cli/crema.ts`](./cli/README.md) — a zero-dep Bun/Node binary — mirrors every route under the CRM worker's `/api/v1/*` as a named subcommand, plus `crema raw <METHOD> <path>` for anything not wrapped. It is the canonical tool surface for *external* AI agents driving Crema on a user's behalf; internal agents (`RepAgent` DO) still call the routes directly with the rep's JWT. When you add or change a public `/api/v1/*` route, add or update the matching CLI command in the same PR.
 
 ## Auth
 
@@ -32,6 +33,7 @@ The `/v1/*` routes documented further down this file are the **agent worker's** 
 - TTL is 8h. No refresh tokens; the user re-authenticates by signing in again. The CRM worker's cookie is named `ctv_auth`.
 - WebSocket auth uses `?token=<jwt>` in the query string because the browser WebSocket API cannot set request headers.
 - Dev-only escape hatch: when `ENVIRONMENT=dev`, `POST /dev/token` on the agent worker mints an 8h token for arbitrary `repId`; `?token=dev` is shorthand for the demo rep.
+- **API keys (CLI / external agents)** — the CRM worker's `/api/v1/*` routes additionally accept long-lived bearer tokens of the form `crema_sk_…`, minted in the web app under Sidebar → CLI / API → CLI and stored hashed in the `api_keys` table. `resolveAuthFromRequest` (in `frontend/src/auth/middleware.ts`) first picks a token off the `Authorization: Bearer` header, falling back to the `ctv_auth` cookie; any token that starts with `crema_sk_` is then resolved against `api_keys` via `resolveApiKeyAuth`, while anything else is verified as a JWT. Both paths produce the same `AuthContext`. A key carries exactly the minting user's role + currently-selected org; revocation is instant via the web app. The CLI is the canonical consumer.
 
 ## Error shape
 

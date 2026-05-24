@@ -58,6 +58,7 @@ Each layer has a canonical doc. **Read on demand based on what you're touching**
 | [`AGENTS-DEVOPS.md`](./AGENTS-DEVOPS.md) | `frontend/` deploy: wrangler, D1, secrets, custom domain, schema migrations, prod inspection | Deploying frontend, rotating a CRM secret, applying a D1 migration to prod, debugging a `wrangler tail ctv-crm` failure |
 | [`extension/README.md`](./extension/README.md) | Chrome MV3 extension: install, website handshake, master switch UX, command dedup, close codes, CDP/DOM modes | Touching anything under `extension/` |
 | [`extension/TODO.md`](./extension/TODO.md) | Extension security backlog and demo-loosening tracker | Before publishing the extension or reviewing its CWS-readiness |
+| [`cli/README.md`](./cli/README.md) | `crema` CLI — dependency-free Bun/Node client for the CRM's public `/api/v1` surface, doubles as the canonical agent tool surface | Touching `cli/`, adding a command to mirror a new public endpoint, or wiring an external agent against the REST API |
 
 The copilot, the React UI, the extension broker, and the cross-property ingest endpoint all converge on the **same JWT**. The CRM worker mints it on login; both Workers verify it with the shared `JWT_SIGNING_KEY`. There is no second backdoor.
 
@@ -83,6 +84,9 @@ The copilot, the React UI, the extension broker, and the cross-property ingest e
 │   ├── manifest.json
 │   └── README.md / TODO.md
 ├── shared/           # Zod schemas + WS protocol spec (imported by all subtrees)
+├── cli/              # `crema` — zero-dep Bun/Node CLI over the public REST API
+│   ├── crema.ts      # single-file CLI; `--json` everywhere; `raw` escape hatch
+│   └── README.md     # human + agent-facing reference
 ├── tools/
 │   └── data-generator/   # Deterministic D1 seeder for ctv_crm (--seed 42 reproducible)
 ├── docs/             # Long-form design docs (coach personas, /today PRD, etc.)
@@ -164,3 +168,17 @@ Three things to know before touching `extension/`:
 3. **The extension is released by GitHub Actions, not by anyone running wrangler.** The workflow is `.github/workflows/extension-release.yml`. It builds, zips, and creates a GitHub Release with both a versioned name and a stable `crema-agent-latest.zip` alias. The CRM web app serves a bundled copy at `/downloads/crema-agent-latest.zip` (refreshed manually — see [`AGENTS-DEVOPS.md`](./AGENTS-DEVOPS.md#extension-binary-refresh)).
 
 Full extension reference: [`extension/README.md`](./extension/README.md). Outstanding security/UX work: [`extension/TODO.md`](./extension/TODO.md).
+
+## CLI (`cli/crema.ts`)
+
+The `crema` CLI is a single-file, zero-dependency Bun/Node client for the CRM's public REST surface (`https://cremasales.com/api/v1`). It is **the canonical tool surface for external AI agents** driving Crema on a user's behalf — every public endpoint is exposed as a named subcommand, and `crema raw <METHOD> <path>` covers anything new without a CLI update.
+
+A few things to know before touching it:
+
+1. **Self-describing on purpose.** `crema -h` is a greppable catalog (every command starts with `cmd:`), `crema <cmd> -h` gives full detail (usage, args, flags, HTTP method, return shape, example), and `crema help --json` emits the entire catalog as structured JSON ready to turn into tool definitions. When adding or renaming a command, preserve this contract — external agents discover the surface this way, not by reading source.
+2. **Auth is an API key, not a JWT.** Keys are minted in the web app under Sidebar → CLI / API → CLI, stored hashed server-side, and shown exactly once. A key carries the minting user's role + organization — an agent can never exceed the purview of the person who created it. Revocation is instant via the web app. Key precedence: `--key` flag > `CREMA_API_KEY` env > `~/.crema/config.json` written by `crema configure`.
+3. **`--json` is the agent contract.** With `--json`, every command emits the raw API response (or `{"error":"…"}` on failure) and exits 0/1 cleanly. Don't add a command that doesn't honor `--json`.
+4. **No npm dependencies.** Only the standard library and global `fetch`. Keep it that way — the appeal of this tool is that an agent can drop it on any machine with Bun or Node 18+ and have it work. If you need a thing, write the thing.
+5. **Mirrors the public API in `frontend/src/routes/api/v1/`** (key auth, `/api/v1/me|actions|contacts|deals|tickets|…`). When you add a new public route, add the matching CLI command in the same PR so the surface stays in sync; if it isn't worth a named command yet, document the `raw` invocation in the CLI README.
+
+Full reference: [`cli/README.md`](./cli/README.md).

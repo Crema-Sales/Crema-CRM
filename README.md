@@ -8,6 +8,7 @@ The Crema Sales monorepo — TanStack Start CRM web app, Cloudflare Workers agen
 ├── backend/          # Cloudflare Workers agent (RepAgent DO, MCP, extension broker)
 ├── extension/        # Chrome MV3 extension (BETA) — ambient capture + agent control
 ├── shared/           # Zod schemas + WS protocol spec (imported by both halves)
+├── cli/              # `crema` — dependency-free CLI for the public REST API
 ├── tools/
 │   └── data-generator/   # CLI for seeding D1 with realistic test data
 ├── docs/             # PRDs, coach personas, architecture notes
@@ -91,6 +92,26 @@ bun run build      # outputs ./dist
 Then in Chrome: `chrome://extensions` → toggle **Developer Mode** → **Load unpacked** → select `extension/dist`.
 
 Pre-built zips are published on every push to `main` that touches `extension/**` or `shared/**` via the `Release Extension` workflow — grab the latest from [Releases](https://github.com/Crema-Sales/Crema-CRM/releases). Releases are marked as **pre-releases** on GitHub for the duration of the beta.
+
+### CLI (`crema`)
+
+A dependency-free command-line client for the public REST API at
+`https://cremasales.com/api/v1`. Every endpoint is exposed as a subcommand, so
+the same binary works as both a human tool and a capability layer for
+autonomous AI agents driving Crema on a user's behalf.
+
+```bash
+cd cli
+bun install              # dev-only types; the CLI itself has zero deps
+bun link                 # exposes `crema` on $PATH (or run ./crema.ts in place)
+crema configure          # interactive: prompts for an API key (mint one in
+                         # the web app under Sidebar → CLI / API → CLI)
+crema me                 # smoke-test the key
+crema actions --json     # machine-readable output for scripts and agents
+```
+
+Full reference, agent contract, and the `raw` escape hatch for any endpoint:
+[`cli/README.md`](./cli/README.md).
 
 ### Data generator
 
