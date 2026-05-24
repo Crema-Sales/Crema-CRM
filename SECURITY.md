@@ -2,7 +2,7 @@
 
 ## Reporting a vulnerability
 
-If you find a security issue in Crema, please **don't open a public issue**. Email **security@cremasales.com** instead, and we'll respond within 48 hours.
+If you find a security issue in Crema, please **don't open a public issue**. Email **security@cremasales.com** instead, and we'll respond as soon as we can.
 
 Please include:
 
