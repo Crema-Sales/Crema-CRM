@@ -120,3 +120,32 @@ jobs:
           # development. Flip to `false` once the contract / storage shape have
           # stabilized and a Chrome Web Store listing is live.
           prerelease: true
+
+      # Sync the freshly-built zip into the frontend tree so cremasales.com's
+      # self-hosted `/downloads/crema-agent-latest.zip` stays current. This
+      # workflow's path filter is `extension/**` / `shared/**` / itself, so the
+      # commit below does NOT re-trigger this job (no loop). A frontend deploy
+      # (`cd frontend && bun run deploy`) is still required for the change to
+      # reach Cloudflare — Cloudflare Workers does not auto-deploy on push.
+      - name: Sync zip into frontend/public/downloads/
+        working-directory: ${{ github.workspace }}
+        env:
+          TARGET: frontend/public/downloads/crema-agent-latest.zip
+          TAG: ${{ steps.meta.outputs.tag }}
+        run: |
+          set -euo pipefail
+          cp crema-agent-latest.zip "${TARGET}"
+          if git diff --quiet -- "${TARGET}"; then
+            echo "No change to ${TARGET} — skipping commit."
+            exit 0
+          fi
+          git config user.name  "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add "${TARGET}"
+          git commit -m "chore(extension): sync ${TAG} into frontend downloads [skip ci]"
+          # Best-effort: if main moved while we built, skip rather than failing
+          # the release. The next extension build will catch up.
+          if ! git push origin HEAD:main; then
+            echo "Push failed (main likely moved). The release is published; next build will resync." >&2
+            exit 0
+          fi

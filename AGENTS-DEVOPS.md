@@ -97,7 +97,7 @@ That's it. `bun run deploy` = `vite build && wrangler deploy`. The Worker URL wo
 **Before every deploy, also check:**
 
 - A new **migration** was added → run `bun run db:apply:remote` first (see [Schema changes](#schema-changes)). Code that references a missing column 500s with `no such column` until the migration lands.
-- A new **extension build** shipped → bump `frontend/public/downloads/crema-agent-latest.zip` (see [Extension binary refresh](#extension-binary-refresh)). The bundled zip is what reps actually download from `/settings → Extension`.
+- A new **extension build** shipped → CI auto-commits the refreshed zip into `frontend/public/downloads/crema-agent-latest.zip`, but a frontend `bun run deploy` is still needed to actually publish it (see [Extension binary refresh](#extension-binary-refresh)). The bundled zip is what reps actually download from `/settings → Extension`.
 
 ## Local dev
 
@@ -148,24 +148,33 @@ D1 supports `ALTER TABLE ADD COLUMN`, `CREATE INDEX`, etc. — but not `DROP COL
 
 The Chrome extension ships bundled in the repo at `frontend/public/downloads/crema-agent-latest.zip`. Cloudflare's assets binding serves it at `/downloads/crema-agent-latest.zip` on whichever domain you've attached — that's the URL `/settings → Extension` links to.
 
-The extension source lives at `extension/` in this same monorepo. The `Release Extension` GitHub Actions workflow (`.github/workflows/extension-release.yml`) builds and zips on every push to `main` that touches `extension/**` or `shared/**`. To bump the bundled copy that the CRM serves after a new extension release:
+The extension source lives at `extension/` in this same monorepo. The `Release Extension` GitHub Actions workflow (`.github/workflows/extension-release.yml`) builds and zips on every push to `main` that touches `extension/**` or `shared/**`, publishes a GitHub Release, **and auto-commits the same zip back into `frontend/public/downloads/crema-agent-latest.zip`** with a `chore(extension): sync <tag> into frontend downloads [skip ci]` message. The commit-back doesn't re-trigger the workflow (path filter excludes `frontend/**`), so there's no loop.
+
+So in steady state, after an extension change lands on `main` the only manual step is the frontend deploy:
 
 ```bash
-# 1. Drop the new zip in place of the old one
-mv path/to/new/crema-agent-latest.zip \
-   frontend/public/downloads/crema-agent-latest.zip
+# Pull the auto-commit CI just pushed
+git pull --ff-only origin main
 
-# 2. Sanity-check (git should report the file changed)
-git diff --stat frontend/public/downloads/crema-agent-latest.zip
+# Sanity-check the bundled zip matches the release you expect
+unzip -p frontend/public/downloads/crema-agent-latest.zip manifest.json | grep version
 
-# 3. Commit, push, deploy — the new zip ships with the next deploy
+# Ship it
+cd frontend && bun run deploy
+```
+
+If CI ever fails to auto-commit (e.g. the push race-loses to a concurrent commit on `main`), the release is still published — pull the asset down manually and commit it yourself:
+
+```bash
+gh release download <tag> -p crema-agent-latest.zip \
+  -O frontend/public/downloads/crema-agent-latest.zip
 git add frontend/public/downloads/crema-agent-latest.zip
-git commit -m "chore(extension): bump bundled crema-agent to <release-tag>"
+git commit -m "chore(extension): sync <tag> into frontend downloads"
 git push origin HEAD:main
 cd frontend && bun run deploy
 ```
 
-Filename stays `crema-agent-latest.zip` on every release so the public URL never changes. Put the release tag (e.g. `v0.1.0-build.6`) in the commit message — it's the only place the version is tracked in this tree, since the file is opaque.
+Filename stays `crema-agent-latest.zip` on every release so the public URL never changes. The release tag is in the auto-commit's message — that's the only place the version is tracked in this tree, since the file is opaque.
 
 ## Secret rotation
 

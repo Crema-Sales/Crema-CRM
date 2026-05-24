@@ -125,9 +125,9 @@ bunx wrangler d1 migrations apply crema-agent --remote   # if a backend migratio
 # Extension
 # DO NOT deploy manually. The Release Extension GH Actions workflow runs on
 # every push to main that touches extension/** or shared/**, builds the zip,
-# and creates a GitHub Release. After the release is up, refresh the bundled
-# copy that the CRM serves: drop the new zip into
-# frontend/public/downloads/crema-agent-latest.zip and re-deploy frontend.
+# creates a GitHub Release, AND auto-commits the refreshed zip back into
+# frontend/public/downloads/crema-agent-latest.zip. To publish it to reps,
+# `git pull` the auto-commit and `cd frontend && bun run deploy`.
 ```
 
 If a deploy fails, surface the error and stop — do not silently revert or skip.
@@ -165,7 +165,7 @@ Three things to know before touching `extension/`:
 
 1. **Master switch is rep-owned.** The toolbar icon flips the agent ON/OFF. While OFF, the SW still maintains the WS to the agent worker (heartbeats fire so the DO knows the rep is online), but every dispatched command returns `{ok:false, error:"rep_disabled"}`. Don't add backdoors around this.
 2. **Allowlist + JWT shape check are strict** (see `extension/src/background/validate.ts` and the top of `extension/src/background/index.ts`). The `agent_handoff` message from `cremasales.com` must come from an allowed origin, the JWT must be three base64url segments, and `baseUrl` must exact-match `wss://ctrl-alt-elite-agent.smashlabs.workers.dev` or end in `.cremasales.com`. These were tightened 2026-05-21 — don't loosen without a security review.
-3. **The extension is released by GitHub Actions, not by anyone running wrangler.** The workflow is `.github/workflows/extension-release.yml`. It builds, zips, and creates a GitHub Release with both a versioned name and a stable `crema-agent-latest.zip` alias. The CRM web app serves a bundled copy at `/downloads/crema-agent-latest.zip` (refreshed manually — see [`AGENTS-DEVOPS.md`](./AGENTS-DEVOPS.md#extension-binary-refresh)).
+3. **The extension is released by GitHub Actions, not by anyone running wrangler.** The workflow is `.github/workflows/extension-release.yml`. It builds, zips, creates a GitHub Release with both a versioned name and a stable `crema-agent-latest.zip` alias, and auto-commits the refreshed zip back into `frontend/public/downloads/crema-agent-latest.zip`. The CRM web app serves that bundled copy at `/downloads/crema-agent-latest.zip` — but the bundled copy only reaches reps after a frontend `bun run deploy` (see [`AGENTS-DEVOPS.md`](./AGENTS-DEVOPS.md#extension-binary-refresh)).
 
 Full extension reference: [`extension/README.md`](./extension/README.md). Outstanding security/UX work: [`extension/TODO.md`](./extension/TODO.md).
 
