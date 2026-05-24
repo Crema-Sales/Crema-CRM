@@ -351,6 +351,46 @@ async function cmdTickets(cfg: Required<Config>): Promise<void> {
   });
 }
 
+async function cmdCoach(cfg: Required<Config>, args: ParsedArgs): Promise<void> {
+  const prompt = args.positionals.slice(1).join(" ").trim();
+  if (!prompt) {
+    fail(
+      'Usage: crema coach "<prompt>" [--history <path>]  (see `crema coach -h`)',
+    );
+  }
+  let history: { role: string; content: string }[] = [];
+  if (typeof args.flags.history === "string") {
+    let raw: string;
+    try {
+      raw = readFileSync(args.flags.history, "utf8");
+    } catch (e) {
+      fail(`--history: cannot read ${args.flags.history}: ${(e as Error).message}`);
+    }
+    try {
+      const parsed = JSON.parse(raw);
+      if (!Array.isArray(parsed))
+        fail("--history: file must contain a JSON array of { role, content } entries");
+      history = parsed;
+    } catch (e) {
+      fail(`--history: invalid JSON: ${(e as Error).message}`);
+    }
+  }
+  const res = await apiRequest(cfg, "POST", "/api/v1/coach/chat", {
+    prompt,
+    history,
+  });
+  show(res, (b) => {
+    const text = typeof b.text === "string" ? b.text : "";
+    process.stdout.write(text);
+    if (!text.endsWith("\n")) process.stdout.write("\n");
+    const calls = Array.isArray(b.tool_calls) ? b.tool_calls : [];
+    if (calls.length > 0) {
+      console.log(`\n— ${calls.length} tool call(s) in ${b.steps ?? 0} step(s):`);
+      for (const c of calls) console.log(`  • ${c.toolName}`);
+    }
+  });
+}
+
 async function cmdRaw(cfg: Required<Config>, args: ParsedArgs): Promise<void> {
   const method = (args.positionals[1] ?? "GET").toUpperCase();
   const path = args.positionals[2];
@@ -538,6 +578,24 @@ const COMMANDS: CommandDoc[] = [
       "{ items[]{ id, subject, description, status, priority, sla_due_at, sla_overdue, assigned_to, contact } }",
     example: "crema tickets --json",
     run: cmdTickets,
+  },
+  {
+    name: "coach",
+    usage: 'crema coach "<prompt>" [--history <path>]',
+    description:
+      "Ask the Sales Coach one synchronous turn — same persona + tool catalog as the in-app chat. Prints the reply text; in --json mode emits the full { text, steps, tool_calls } envelope.",
+    args: "<prompt>  (required) — remaining words form the prompt",
+    flags: [
+      {
+        flag: "--history <path>",
+        desc: "JSON file with a [{ role, content }, …] array for multi-turn follow-ups",
+      },
+    ],
+    method: "POST /api/v1/coach/chat",
+    returns:
+      "{ text, steps, tool_calls[]{ toolName, input, output } }  (non-streaming)",
+    example: 'crema coach "What should I work on this morning?"',
+    run: cmdCoach,
   },
   {
     name: "smoke",

@@ -108,7 +108,10 @@ crema configure          # interactive: prompts for an API key (mint one in
                          # the web app under Sidebar → CLI / API → CLI)
 crema me                 # smoke-test the key
 crema actions --json     # machine-readable output for scripts and agents
+crema coach "what should I work on this morning?"  # talk to the Sales Coach
 ```
+
+The CLI now reaches the Sales Coach over `POST /api/v1/coach/chat` — the same persona + tool catalog the in-app chat uses, exposed synchronously so a script or autonomous agent can drive it without a WebSocket.
 
 Full reference, agent contract, and the `raw` escape hatch for any endpoint:
 [`cli/README.md`](./cli/README.md).

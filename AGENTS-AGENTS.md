@@ -16,6 +16,7 @@ Every logged-in sales rep gets a dedicated AI copilot that lives on the Cloudfla
   - **Run:** Each turn streams through `AIChatAgent.onChatMessage`. Tools execute as `fetch()` back into the same Worker API.
   - **Hibernate:** After ~30s idle, the DO hibernates; storage persists. Next message wakes it in <100ms.
   - **Cron wake:** Daily summary fan-out fires `env.AGENT.get(id).fetch('/cron/daily')` for each active rep — see "Scheduled tasks" below.
+  - **HTTP wake (synchronous coach):** `POST /v1/coach/chat` on the agent worker forwards to `env.AGENT.get(id).fetch('/chat/once')`, which runs `RepAgent.chatOnce()` — same persona + tool catalog as the WS path, but a single-shot `generateText` call that returns the final text + tool transcript as JSON. The route does NOT append to `this.messages`, so a CLI invocation can't interleave with a live UI WebSocket on the same DO. Exposed publicly through the CRM worker's `POST /api/v1/coach/chat`, which mints a 120s rep JWT from the caller's API key + persona overlays and proxies down.
 
 ## Framework: Cloudflare `agents` SDK
 

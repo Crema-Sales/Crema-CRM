@@ -57,6 +57,7 @@ import { Route as AuthenticatedDealsIdRouteImport } from './routes/_authenticate
 import { Route as AuthenticatedContactsIdRouteImport } from './routes/_authenticated/contacts.$id'
 import { Route as AuthenticatedCompaniesIdRouteImport } from './routes/_authenticated/companies.$id'
 import { Route as ApiV1ContactsIdRouteImport } from './routes/api/v1/contacts.$id'
+import { Route as ApiV1CoachChatRouteImport } from './routes/api/v1/coach.chat'
 import { Route as ApiPublicHooksSlaSweepRouteImport } from './routes/api/public/hooks/sla-sweep'
 import { Route as ApiV1ContactsIdNotesRouteImport } from './routes/api/v1/contacts.$id.notes'
 
@@ -305,6 +306,11 @@ const ApiV1ContactsIdRoute = ApiV1ContactsIdRouteImport.update({
   path: '/$id',
   getParentRoute: () => ApiV1ContactsRoute,
 } as any)
+const ApiV1CoachChatRoute = ApiV1CoachChatRouteImport.update({
+  id: '/api/v1/coach/chat',
+  path: '/api/v1/coach/chat',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const ApiPublicHooksSlaSweepRoute = ApiPublicHooksSlaSweepRouteImport.update({
   id: '/api/public/hooks/sla-sweep',
   path: '/api/public/hooks/sla-sweep',
@@ -364,6 +370,7 @@ export interface FileRoutesByFullPath {
   '/companies/': typeof AuthenticatedCompaniesIndexRoute
   '/relationships/': typeof AuthenticatedRelationshipsIndexRoute
   '/api/public/hooks/sla-sweep': typeof ApiPublicHooksSlaSweepRoute
+  '/api/v1/coach/chat': typeof ApiV1CoachChatRoute
   '/api/v1/contacts/$id': typeof ApiV1ContactsIdRouteWithChildren
   '/api/v1/contacts/$id/notes': typeof ApiV1ContactsIdNotesRoute
 }
@@ -412,6 +419,7 @@ export interface FileRoutesByTo {
   '/companies': typeof AuthenticatedCompaniesIndexRoute
   '/relationships': typeof AuthenticatedRelationshipsIndexRoute
   '/api/public/hooks/sla-sweep': typeof ApiPublicHooksSlaSweepRoute
+  '/api/v1/coach/chat': typeof ApiV1CoachChatRoute
   '/api/v1/contacts/$id': typeof ApiV1ContactsIdRouteWithChildren
   '/api/v1/contacts/$id/notes': typeof ApiV1ContactsIdNotesRoute
 }
@@ -465,6 +473,7 @@ export interface FileRoutesById {
   '/_authenticated/companies/': typeof AuthenticatedCompaniesIndexRoute
   '/_authenticated/relationships/': typeof AuthenticatedRelationshipsIndexRoute
   '/api/public/hooks/sla-sweep': typeof ApiPublicHooksSlaSweepRoute
+  '/api/v1/coach/chat': typeof ApiV1CoachChatRoute
   '/api/v1/contacts/$id': typeof ApiV1ContactsIdRouteWithChildren
   '/api/v1/contacts/$id/notes': typeof ApiV1ContactsIdNotesRoute
 }
@@ -518,6 +527,7 @@ export interface FileRouteTypes {
     | '/companies/'
     | '/relationships/'
     | '/api/public/hooks/sla-sweep'
+    | '/api/v1/coach/chat'
     | '/api/v1/contacts/$id'
     | '/api/v1/contacts/$id/notes'
   fileRoutesByTo: FileRoutesByTo
@@ -566,6 +576,7 @@ export interface FileRouteTypes {
     | '/companies'
     | '/relationships'
     | '/api/public/hooks/sla-sweep'
+    | '/api/v1/coach/chat'
     | '/api/v1/contacts/$id'
     | '/api/v1/contacts/$id/notes'
   id:
@@ -618,6 +629,7 @@ export interface FileRouteTypes {
     | '/_authenticated/companies/'
     | '/_authenticated/relationships/'
     | '/api/public/hooks/sla-sweep'
+    | '/api/v1/coach/chat'
     | '/api/v1/contacts/$id'
     | '/api/v1/contacts/$id/notes'
   fileRoutesById: FileRoutesById
@@ -648,6 +660,7 @@ export interface RootRouteChildren {
   ApiV1OpenapiRoute: typeof ApiV1OpenapiRoute
   ApiV1TicketsRoute: typeof ApiV1TicketsRoute
   ApiPublicHooksSlaSweepRoute: typeof ApiPublicHooksSlaSweepRoute
+  ApiV1CoachChatRoute: typeof ApiV1CoachChatRoute
 }
 
 declare module '@tanstack/react-router' {
@@ -988,6 +1001,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiV1ContactsIdRouteImport
       parentRoute: typeof ApiV1ContactsRoute
     }
+    '/api/v1/coach/chat': {
+      id: '/api/v1/coach/chat'
+      path: '/api/v1/coach/chat'
+      fullPath: '/api/v1/coach/chat'
+      preLoaderRoute: typeof ApiV1CoachChatRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/api/public/hooks/sla-sweep': {
       id: '/api/public/hooks/sla-sweep'
       path: '/api/public/hooks/sla-sweep'
@@ -1175,6 +1195,7 @@ const rootRouteChildren: RootRouteChildren = {
   ApiV1OpenapiRoute: ApiV1OpenapiRoute,
   ApiV1TicketsRoute: ApiV1TicketsRoute,
   ApiPublicHooksSlaSweepRoute: ApiPublicHooksSlaSweepRoute,
+  ApiV1CoachChatRoute: ApiV1CoachChatRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)

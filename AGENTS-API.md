@@ -152,6 +152,27 @@ HMAC: `Authorization: HMAC <source>:<base64(hmac_sha256(body, INGEST_HMAC_KEYS[s
 
 See [`AGENTS-AGENTS.md`](./AGENTS-AGENTS.md) for the DO side.
 
+### Sales Coach (synchronous)
+
+The same `RepAgent` pipeline as the WS path — same system prompt, same persona overlay, same 17-tool catalog, same 10-step budget — but one-shot over plain HTTP so a CLI or external agent can use it without speaking WebSocket. Lives on **both** workers:
+
+| Worker | Method | Path                  | Purpose                                                                      |
+| ------ | ------ | --------------------- | ---------------------------------------------------------------------------- |
+| CRM    | `POST` | `/api/v1/coach/chat`  | Public entry: auths via API key / cookie, mints a 120s rep JWT, proxies down |
+| Agent  | `POST` | `/v1/coach/chat`      | Forwards to the rep's `RepAgent` DO at `/chat/once` over `x-rep-jwt`         |
+
+Request:
+```json
+{ "prompt": "what should I work on this morning?", "history": [{ "role": "user", "content": "…" }] }
+```
+
+Response:
+```json
+{ "text": "…coach's final reply…", "steps": 2, "tool_calls": [{ "toolName": "prioritizedActions", "input": {}, "output": { "items": [/* … */] } }] }
+```
+
+**Statelessness.** The DO does NOT append these turns to the rep's in-app chat history — a CLI invocation can't interleave with a live UI WebSocket session. Pass `history` for multi-turn follow-ups; the caller owns the transcript. For streaming + persistence, use the WS path.
+
 ## SSE topics
 
 UI and the `RepAgent` DO both subscribe — this is the shared-view channel that keeps rep and copilot in sync without bespoke replication.

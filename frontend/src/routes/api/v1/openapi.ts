@@ -162,6 +162,13 @@ const SPEC = {
     { name: "contacts", description: "People in the CRM." },
     { name: "deals", description: "Open and closed deals." },
     { name: "tickets", description: "Support tickets with SLA tracking." },
+    {
+      name: "coach",
+      description:
+        "Sales Coach — the same persona + tool pipeline the in-app chat " +
+        "uses, exposed synchronously so CLIs and other bearer-authed " +
+        "agents can talk to it without a WebSocket.",
+    },
   ],
   paths: {
     "/api/v1/me": {
@@ -388,6 +395,97 @@ const SPEC = {
             },
           },
           ...okError,
+        },
+      },
+    },
+    "/api/v1/coach/chat": {
+      post: {
+        tags: ["coach"],
+        operationId: "coachChat",
+        summary: "Ask the Sales Coach (one synchronous turn)",
+        description:
+          "Runs one full coach turn — system prompt, persona overlay, " +
+          "and the same tool catalog the UI's WebSocket chat uses — then " +
+          "returns the final text plus a transcript of every tool the " +
+          "coach called. Up to 10 tool-call steps per request, capped to " +
+          "match the in-app chat. The call does NOT append to the rep's " +
+          "in-app chat history; pass prior turns in `history` for follow-ups.",
+        requestBody: {
+          required: true,
+          content: {
+            "application/json": {
+              schema: {
+                type: "object",
+                required: ["prompt"],
+                properties: {
+                  prompt: {
+                    type: "string",
+                    minLength: 1,
+                    maxLength: 8000,
+                    description: "The rep's question or instruction.",
+                  },
+                  history: {
+                    type: "array",
+                    maxItems: 40,
+                    description:
+                      "Optional prior turns for a multi-turn conversation. " +
+                      "Each entry is one message with a role and content.",
+                    items: {
+                      type: "object",
+                      required: ["role", "content"],
+                      properties: {
+                        role: { type: "string", enum: ["user", "assistant", "system"] },
+                        content: { type: "string", minLength: 1, maxLength: 8000 },
+                      },
+                    },
+                  },
+                },
+              },
+            },
+          },
+        },
+        responses: {
+          "200": {
+            description: "Coach reply",
+            content: {
+              "application/json": {
+                schema: {
+                  type: "object",
+                  properties: {
+                    text: {
+                      type: "string",
+                      description: "The coach's final assistant text.",
+                    },
+                    steps: {
+                      type: "integer",
+                      description: "Number of tool-call steps the coach took.",
+                    },
+                    tool_calls: {
+                      type: "array",
+                      description: "Ordered transcript of tool invocations.",
+                      items: {
+                        type: "object",
+                        properties: {
+                          toolName: { type: "string" },
+                          input: {},
+                          output: {},
+                        },
+                      },
+                    },
+                  },
+                },
+              },
+            },
+          },
+          ...okError,
+          "422": {
+            description: "Request body failed validation.",
+            content: { "application/json": { schema: ErrorSchema } },
+          },
+          "502": {
+            description: "The backend agent Worker was unreachable or errored.",
+            content: { "application/json": { schema: ErrorSchema } },
+          },
         },
       },
     },

@@ -15,6 +15,11 @@ export interface CloudflareEnv {
   OPENROUTER_API_KEY?: string;
   /** Optional — when set, enrichment uses Tavily; otherwise it falls back to direct page fetches. */
   TAVILY_API_KEY?: string;
+  /**
+   * Backend agent Worker base URL. Used by /api/v1/coach/chat to proxy
+   * synchronous coach turns. Defaults to the prod Worker when unset.
+   */
+  COACH_AGENT_URL?: string;
 }
 
 interface EnvStore {

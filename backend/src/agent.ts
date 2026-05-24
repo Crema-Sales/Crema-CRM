@@ -7,6 +7,7 @@ import {
   generateText,
   stepCountIs,
   streamText,
+  type ModelMessage,
   type UIMessage,
 } from "ai";
 import type {
@@ -98,6 +99,75 @@ export class RepAgent extends AIChatAgent<Env> {
     }
   }
 
+  /**
+   * One-shot, non-streaming chat turn — the synchronous twin of `onChatMessage`.
+   *
+   * Built for the `POST /v1/coach/chat` HTTP surface (and, by extension, the
+   * `crema coach` CLI command). Reuses the *exact* persona pipeline, tool
+   * catalog, and step budget the WS path uses so a rep gets the same answers
+   * from any surface. Deliberately stateless: it does NOT append to
+   * `this.messages`, so a CLI call from a terminal can't interleave with a
+   * live WS chat in the UI. Callers wanting a follow-up pass the prior turns
+   * in via `history`.
+   */
+  async chatOnce(args: {
+    prompt: string;
+    history?: { role: "user" | "assistant" | "system"; content: string }[];
+  }): Promise<{
+    text: string;
+    steps: number;
+    tool_calls: { toolName: string; input: unknown; output: unknown | null }[];
+  }> {
+    const jwt = await this.getRepJwt();
+    if (!jwt) {
+      throw new Error("no rep JWT on this DO — open a WS chat first or pass the JWT via x-rep-jwt");
+    }
+    const model = getModel(this.env);
+    console.log(`[RepAgent] chatOnce provider=${describeProvider(this.env)}`);
+
+    const tools = buildTools(this.env, jwt, this);
+    const coachSlug = readCoachSlugFromJwt(jwt);
+    const { orgPrompt, userPrompt } = readSystemPromptsFromJwt(jwt);
+    const system = buildSystemPrompt(coachSlug, { orgPrompt, userPrompt });
+
+    const messages: ModelMessage[] = [];
+    for (const m of args.history ?? []) {
+      const content = (m.content ?? "").trim();
+      if (!content) continue;
+      messages.push({ role: m.role, content });
+    }
+    messages.push({ role: "user", content: args.prompt });
+
+    const result = await generateText({
+      model,
+      system,
+      messages,
+      tools,
+      stopWhen: stepCountIs(10),
+    });
+
+    const tool_calls: { toolName: string; input: unknown; output: unknown | null }[] = [];
+    for (const step of result.steps ?? []) {
+      const calls = (step as { toolCalls?: { toolName: string; input: unknown }[] }).toolCalls ?? [];
+      const results = (step as { toolResults?: { toolCallId: string; output: unknown }[] }).toolResults ?? [];
+      const outputById = new Map(results.map((r) => [r.toolCallId, r.output]));
+      for (const call of calls) {
+        const id = (call as { toolCallId?: string }).toolCallId;
+        tool_calls.push({
+          toolName: call.toolName,
+          input: call.input,
+          output: id !== undefined ? outputById.get(id) ?? null : null,
+        });
+      }
+    }
+
+    return {
+      text: result.text,
+      steps: result.steps?.length ?? 0,
+      tool_calls,
+    };
+  }
+
   async reminder(payload: { what: string }): Promise<void> {
     const what = payload?.what ?? "(reminder)";
     const message: UIMessage = {
@@ -115,6 +185,49 @@ export class RepAgent extends AIChatAgent<Env> {
 
   async fetch(request: Request): Promise<Response> {
     const url = new URL(request.url);
+    if (url.pathname === "/chat/once" && request.method === "POST") {
+      // The Worker forwards the rep's bearer JWT in `x-rep-jwt` so a freshly-
+      // woken DO can authenticate self-calls into `/v1/*` (same trick as the
+      // cron and research paths). Persist it so subsequent stateless calls
+      // don't need it re-handed.
+      const incomingJwt = request.headers.get(REP_JWT_HEADER);
+      if (incomingJwt && this.repJwt !== incomingJwt) {
+        this.repJwt = incomingJwt;
+        await this.ctx.storage.put(REP_JWT_STORAGE_KEY, incomingJwt);
+      }
+      const body = (await request.json().catch(() => null)) as {
+        prompt?: unknown;
+        history?: unknown;
+      } | null;
+      if (!body || typeof body.prompt !== "string" || body.prompt.trim().length === 0) {
+        return Response.json(
+          { error: { code: "validation_failed", message: "missing prompt" } },
+          { status: 422 },
+        );
+      }
+      type HistoryEntry = { role: "user" | "assistant" | "system"; content: string };
+      const history: HistoryEntry[] | undefined = Array.isArray(body.history)
+        ? body.history.flatMap((m): HistoryEntry[] => {
+            if (!m || typeof m !== "object") return [];
+            const role = (m as { role?: unknown }).role;
+            const content = (m as { content?: unknown }).content;
+            if (role !== "user" && role !== "assistant" && role !== "system") return [];
+            if (typeof content !== "string") return [];
+            return [{ role, content }];
+          })
+        : undefined;
+      try {
+        const result = await this.chatOnce({ prompt: body.prompt, history });
+        return Response.json(result);
+      } catch (err) {
+        const message = err instanceof Error ? err.message : String(err);
+        console.log(`[RepAgent] chatOnce failed: ${message}`);
+        return Response.json(
+          { error: { code: "agent_failed", message } },
+          { status: 502 },
+        );
+      }
+    }
     if (url.pathname === "/cron/daily") {
       // The cron caller forges a per-rep JWT and threads it via x-rep-jwt
       // so a freshly-woken DO that's never seen a chat connection can still

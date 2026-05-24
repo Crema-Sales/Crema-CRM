@@ -31,6 +31,10 @@ bun run deploy   # = vite build && wrangler deploy
 
 URL stays `https://ctv-crm.smashlabs.workers.dev`.
 
+## Optional: `COACH_AGENT_URL` override
+
+`POST /api/v1/coach/chat` proxies to the backend agent Worker. The default target is `https://ctrl-alt-elite-agent.smashlabs.workers.dev` — if the backend ever moves, override via `wrangler secret put COACH_AGENT_URL` (or add to `[vars]` in `wrangler.jsonc` for non-secret values). Local dev: set it in `.dev.vars` to point at `http://localhost:8787`.
+
 ## Smoke (60s)
 
 1. Open the URL in a browser.

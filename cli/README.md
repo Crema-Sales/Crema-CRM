@@ -68,6 +68,7 @@ at a staging or local environment.
 | `crema note <id> "<body>" [--subject "<text>"]` | Append a note to a contact |
 | `crema deals` | List deals |
 | `crema tickets` | List tickets with SLA flags |
+| `crema coach "<prompt>" [--history <path>]` | Ask the Sales Coach — same persona + tool catalog as the in-app chat |
 | `crema smoke` | Call every endpoint and report reachability |
 | `crema raw <METHOD> <path> [--data '<json>']` | Call any endpoint directly |
 | `crema help` | Full usage |
@@ -90,6 +91,7 @@ crema contacts --mine
 crema contact c_8f3a1b20
 crema note c_8f3a1b20 "Left a voicemail, will retry Thursday" --subject "Follow-up"
 crema deals --json
+crema coach "What should I work on this morning?"
 crema raw GET /api/v1/contacts/c_8f3a1b20 --json
 crema smoke
 ```
@@ -165,6 +167,36 @@ The CLI covers the complete public REST API:
 | `POST /api/v1/contacts/{id}/notes` | `note <id> "<body>"` |
 | `GET /api/v1/deals` | `deals` |
 | `GET /api/v1/tickets` | `tickets` |
+| `POST /api/v1/coach/chat` | `coach "<prompt>"` |
 
 Every request is scoped to the calling user. Reps see only their own records;
 admins and managers see the whole organization.
+
+### Sales Coach over the CLI
+
+`crema coach` calls the same per-rep agent the in-app chat uses — same system
+prompt, same persona overlay (your pick from onboarding), same 17-tool
+catalog, same 10-step budget — but synchronously over HTTP instead of a
+WebSocket. The reply is the coach's final assistant text, plus a transcript
+of every tool it invoked.
+
+```sh
+crema coach "What should I work on this morning?"
+crema coach "Draft a follow-up for c_8f3a1b20 — they ghosted me for two weeks"
+crema coach "Research the prospect at c_8f3a1b20 and suggest a gift" --json
+```
+
+The CLI's coach call is **stateless** — it does NOT land in your in-app chat
+history, and the coach does not see prior CLI turns unless you pass them via
+`--history <path>`. The history file is a JSON array of `{ role, content }`
+entries you maintain locally:
+
+```json
+[
+  { "role": "user", "content": "What should I work on this morning?" },
+  { "role": "assistant", "content": "Acme's renewal hits in 9 days…" }
+]
+```
+
+For streaming chat with persistence to your rep timeline, use the in-app
+chat bubble or the WebSocket at `wss://<agent-worker>/v1/agent?token=…`.

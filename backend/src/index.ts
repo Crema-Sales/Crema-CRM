@@ -183,6 +183,28 @@ app.post("/agents/:repId/act", (c) => {
   return stub.fetch(c.req.raw);
 });
 
+// Synchronous, non-streaming coach chat — the HTTP twin of the WS path. Lets
+// the public REST API (and the `crema coach` CLI) talk to the same persona +
+// tool pipeline the UI uses, without a WebSocket. The DO is addressed by the
+// authenticated rep's id; the rep JWT is forwarded via `x-rep-jwt` so a
+// freshly-woken DO can authenticate its self-calls into `/v1/*`.
+app.post("/v1/coach/chat", async (c) => {
+  const rep = await requireRep(c);
+  const id = c.env.AGENT.idFromName(rep.repId);
+  const stub = c.env.AGENT.get(id);
+  const auth = c.req.header("Authorization") ?? "";
+  const token = auth.match(/^Bearer\s+(.+)$/i)?.[1]?.trim() ?? "";
+  const init: RequestInit = {
+    method: "POST",
+    headers: {
+      "content-type": "application/json",
+      "x-rep-jwt": token,
+    },
+    body: await c.req.text(),
+  };
+  return stub.fetch(new Request(new URL("/chat/once", "http://internal/"), init));
+});
+
 // Public /v1 routes (HMAC or no auth). Mount before the JWT gate.
 app.route("/", ingestRoutes);
 
